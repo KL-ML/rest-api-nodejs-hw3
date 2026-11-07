@@ -31,7 +31,7 @@ export async function register(req: Request, res: Response) {
     });
 
   if(existingUser){
-    return res.status(409).json({message: "Username or email already exists"});
+    return res.status(409).json({message: "Username or email already taken"});
   }
 
   const hashedPassword = await bcrypt.hash(password, 10);
