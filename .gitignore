@@ -2,8 +2,15 @@ node_modules
 # Keep environment variables out of version control
 .env
 
+uploads/
+
 /generated/prisma
 *.db
 *.db-journal
 
+.DS_Store
 .vscode
+
+*.jpg
+*.jpeg
+*.png

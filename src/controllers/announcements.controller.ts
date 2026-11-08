@@ -1,5 +1,9 @@
 import { Request, Response } from "express";
 import prisma from "../../prisma/client.ts";
+import fs from "fs/promises";
+
+import uploadToCloudinary from "../cloudinary.ts";
+import logger from "../logger.ts";
 
 function formatAnnouncement(announcement: any) {
   const { userId, ...result } = announcement;
@@ -93,9 +97,35 @@ export async function getAnnouncementById(req: Request, res: Response) {
 
 export async function createAnnouncement(req: Request, res: Response) {
   const userId = req.user!.sub;
+  let imageUrl: string | undefined;
+
+  if (req.file) {
+    try {
+      imageUrl = await uploadToCloudinary(req.file.path);
+      await fs.unlink(req.file.path);
+      logger.info({userId, imageUrl}, "Announcement photo uploaded");
+    } catch (error) {
+
+      try {
+        await fs.unlink(req.file.path);
+      } catch {}
+      logger.error({error}, "Failed to upload announcement photo");
+
+      return res.status(500).json({message: "Failed to upload image"});
+    }
+  }
+
+
   const announcement =
     await prisma.announcement.create({
-      data: { ...req.body, userId},
+      data: {
+        title: req.body.title,
+        description: req.body.description,
+        price: Number(req.body.price),
+        category: req.body.category,
+        imageUrl,
+        userId
+      },
 
       include: {
         user: {
@@ -108,6 +138,8 @@ export async function createAnnouncement(req: Request, res: Response) {
         }
       }
     });
+
+    logger.info({announcementId: announcement.id, userId}, "Announcement created");
 
   return res.status(201).json(formatAnnouncement(announcement));
 }
@@ -133,9 +165,51 @@ export async function updateAnnouncement(req: Request, res: Response) {
     return res.status(403).json({message: "Access denied"});
   }
 
+  let imageUrl = existing.imageUrl ?? undefined;
+
+  if (req.file) {
+    try {
+      imageUrl = await uploadToCloudinary(req.file.path);
+      await fs.unlink(req.file.path);
+
+      logger.info({announcementId: id, userId, imageUrl}, "Announcement photo uploaded");
+    } catch (error) {
+
+      try {
+        await fs.unlink(req.file.path);
+      } catch {}
+
+      logger.error({error, announcementId: id}, "Failed to upload announcement photo");
+
+      return res.status(500).json({message: "Failed to upload image"});
+    }
+  }
+
   const updated = await prisma.announcement.update({
       where: {id},
-      data: req.body,
+      data: {
+        title:
+          req.body.title !== undefined
+            ? req.body.title
+            : undefined,
+
+        description:
+          req.body.description !== undefined
+            ? req.body.description
+            : undefined,
+
+        price:
+          req.body.price !== undefined
+            ? Number(req.body.price)
+            : undefined,
+
+        category:
+          req.body.category !== undefined
+            ? req.body.category
+            : undefined,
+
+        imageUrl
+      },
       include: {
         user: {
           select: {
@@ -147,6 +221,8 @@ export async function updateAnnouncement(req: Request, res: Response) {
         }
       }
     });
+
+  logger.info({announcementId: updated.id, userId}, "Announcement updated");
 
   return res.json(formatAnnouncement(updated));
 }

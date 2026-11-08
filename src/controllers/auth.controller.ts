@@ -3,24 +3,10 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
 import prisma from "../../prisma/client.ts";
+import { generateTokens } from "../utils/tokens.ts";
+import logger from "../logger.ts";
 
 interface JwtPayload {sub: number;}
-
-function generateTokens(userId: number) {
-  const accessToken = jwt.sign(
-    {sub: userId},
-    process.env.JWT_SECRET!,
-    {expiresIn: "15m"}
-  );
-
-  const refreshToken = jwt.sign(
-    {sub: userId},
-    process.env.JWT_SECRET!,
-    {expiresIn: "7d"}
-  );
-
-  return {accessToken, refreshToken};
-}
 
 export async function register(req: Request, res: Response) {
 
@@ -36,6 +22,7 @@ export async function register(req: Request, res: Response) {
 
   const hashedPassword = await bcrypt.hash(password, 10);
   const user = await prisma.user.create({data:{username, email, password: hashedPassword, name}});
+  logger.info({userId: user.id, username: user.username}, "User registered");
   const {accessToken, refreshToken} = generateTokens(user.id);
 
   await prisma.refreshToken.create({
@@ -69,6 +56,8 @@ export async function login(req: Request, res: Response){
   if(!passwordValid){
     return res.status(401).json({message: "Invalid credentials"});
   }
+
+  logger.info({userId: user.id, username: user.username}, "User logged in");
 
   const { accessToken, refreshToken } = generateTokens(user.id);
 

@@ -22,17 +22,18 @@ const announcementSchema = z.object({
   description: z.string(),
   price: z.number(),
   category: z.enum(["sale", "service", "job", "other"]),
+  imageUrl: z.string().nullable().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
   user: userSchema,
 });
 
-const announcementCreateSchema = z.object({
-  title: z.string(),
-  description: z.string(),
-  price: z.number(),
-  category: z.enum(["sale", "service", "job", "other"]),
-});
+// const announcementCreateSchema = z.object({
+//   title: z.string(),
+//   description: z.string(),
+//   price: z.number(),
+//   category: z.enum(["sale", "service", "job", "other"]),
+// });
 
 const authResponseSchema = z.object({
   user: userSchema,
@@ -249,9 +250,15 @@ registry.registerPath({
   request: {
     body: {
       content: {
-        "application/json": {
-          schema: announcementCreateSchema,
-        },
+        "multipart/form-data": {
+          schema: z.object({
+            title: z.string(),
+            description: z.string(),
+            price: z.coerce.number(),
+            category: z.enum(["sale", "service", "job", "other",]),
+            image: z.any().openapi({type: "string", format: "binary",}).optional(),
+          })
+        }
       },
     },
   },
@@ -264,9 +271,8 @@ registry.registerPath({
         },
       },
     },
-    401: {
-      description: "Unauthorized",
-    },
+    401: {description: "Unauthorized"},
+    400: {description: "Validation error"},
   },
 });
 
@@ -281,16 +287,15 @@ registry.registerPath({
     }),
     body: {
       content: {
-        "application/json": {
-          schema: announcementCreateSchema
-            .partial()
-            .refine(
-              data => Object.keys(data).length > 0,
-              {
-                message: "At least one field required",
-              }
-            ),
-        },
+        "multipart/form-data": {
+          schema: z.object({
+            title: z.string().optional(),
+            description: z.string().optional(),
+            price: z.coerce.number().optional(),
+            category: z.enum(["sale", "service", "job", "other",]).optional(),
+            image: z.any().openapi({type: "string", format: "binary",}).optional(),
+          })
+        }
       },
     },
   },
@@ -303,12 +308,10 @@ registry.registerPath({
         },
       },
     },
-    403: {
-      description: "Forbidden",
-    },
-    404: {
-      description: "Not found",
-    },
+    400: {description: "Validation error"},
+    401:{description: "Validation error"},
+    403: {description: "Forbidden"},
+    404: {description: "Not found"},
   },
 });
 
@@ -323,15 +326,9 @@ registry.registerPath({
     }),
   },
   responses: {
-    204: {
-      description: "Announcement deleted",
-    },
-    403: {
-      description: "Forbidden",
-    },
-    404: {
-      description: "Not found",
-    },
+    204: {description: "Announcement deleted"},
+    403: { description: "Forbidden"},
+    404: {description: "Not found"},
   },
 });
 

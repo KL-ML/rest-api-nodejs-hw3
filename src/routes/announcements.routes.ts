@@ -10,6 +10,8 @@ import {
 
 import { authenticate } from "../middleware/authenticate.ts";
 
+import { upload } from "../middleware/upload.ts";
+
 import {validateBody, validateParams, validateQuery} from "../middleware/validate.ts";
 
 import {createAnnouncementSchema, updateAnnouncementSchema, announcementIdSchema, announcementQuerySchema} from "../validators/announcements.validator.ts";
@@ -20,8 +22,8 @@ announcementsRouter.get("/", validateQuery(announcementQuerySchema), getAnnounce
 
 announcementsRouter.get("/:id", validateParams(announcementIdSchema), getAnnouncementById);
 
-announcementsRouter.post("/", authenticate, validateBody(createAnnouncementSchema), createAnnouncement);
+announcementsRouter.post("/", authenticate, upload.single("image"), validateBody(createAnnouncementSchema), createAnnouncement);
 
-announcementsRouter.patch("/:id", authenticate, validateParams(announcementIdSchema), validateBody(updateAnnouncementSchema), updateAnnouncement);
+announcementsRouter.patch("/:id", authenticate, upload.single("image"), validateParams(announcementIdSchema), validateBody(updateAnnouncementSchema), updateAnnouncement);
 
 announcementsRouter.delete("/:id", authenticate, validateParams(announcementIdSchema), deleteAnnouncement);
