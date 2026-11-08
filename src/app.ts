@@ -11,6 +11,7 @@ import { authRouter } from "./routes/auth.routes.ts";
 import { announcementsRouter } from "./routes/announcements.routes.ts";
 import { generateOpenApiDocument } from "./openapi.ts";
 import logger from "./logger.ts";
+import errorMiddleware from "./middleware/errorMiddleware.ts";
 
 const pinoHttp = pinoHttpModule as any;
 
@@ -50,5 +51,7 @@ app.use(
   swaggerUi.serve,
   swaggerUi.setup(generateOpenApiDocument())
 );
+
+app.use(errorMiddleware);
 
 export default app;

@@ -4,8 +4,11 @@ import {register, login, refresh, logout, me} from "../controllers/auth.controll
 import {validateBody} from "../middleware/validate.ts";
 import {registerSchema, loginSchema} from "../validators/auth.validator.ts";
 import { authenticate } from "../middleware/authenticate.ts";
+import { authLimiter } from "../middleware/rateLimit.ts";
 
 export const authRouter = Router();
+
+authRouter.use(authLimiter);
 
 authRouter.post("/register", validateBody(registerSchema), register);
 

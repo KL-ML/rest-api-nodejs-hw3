@@ -28,13 +28,6 @@ const announcementSchema = z.object({
   user: userSchema,
 });
 
-// const announcementCreateSchema = z.object({
-//   title: z.string(),
-//   description: z.string(),
-//   price: z.number(),
-//   category: z.enum(["sale", "service", "job", "other"]),
-// });
-
 const authResponseSchema = z.object({
   user: userSchema,
   accessToken: z.string(),

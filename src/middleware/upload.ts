@@ -25,7 +25,9 @@ const fileFilter: multer.Options["fileFilter"] = (_req, file, cb) => {
   if (file.mimetype.startsWith("image/")) {
     cb(null, true);
   } else {
-    cb(new Error("Only image files are allowed"));
+    const error: any = new Error('Only image files are allowed!');
+    error.status = 400;
+    return cb(error, false);
   }
 };
 
